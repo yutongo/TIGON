@@ -10,6 +10,7 @@ Packages required:
 6. random
 7. matplotlib
 8. functools
+9. numpy
 
 
 # Input Files
