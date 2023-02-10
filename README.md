@@ -17,8 +17,20 @@ Packages required:
 
 
 # Usage
+### Inputs:
+`--dataset` Name of the data set. Options: EMT; Lineage; Bifurcation; Simulation, default = 'Simulation'. \
+`--input_dir` Input Files Directory, default='Input/'. \
+`--save_dir` Output Files Directory, default='Output/'. \
+`--timepoints` Time points of data. \
+`--niters` Number of traning iterations. \
+`--lr` Learning rate. \
+`--num_samples` Number of sampling points per epoch. \
+`--hidden_dim` Dimension of hidden layer. \
+`--n_hiddens` Number of hidden layers for the NN1 learning velocity. \ 
+
+    
 ### Examples:
-`python3 TIGON.py --encoding AA`
+`python3 TIGON.py`
 
 
 # Sources
