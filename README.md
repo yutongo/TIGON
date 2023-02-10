@@ -26,9 +26,11 @@ Packages required:
 `--lr` Learning rate. \
 `--num_samples` Number of sampling points per epoch. \
 `--hidden_dim` Dimension of hidden layer. \
-`--n_hiddens` Number of hidden layers for the neural network learning velocity. \
+`--n_hiddens` Number of hidden layers for the neural network learning velocity. 
 
-    
+### Outputs:
+'ckpt.pth': save model’s parameters and training errors.
+
 ### Examples:
 `python3 TIGON.py`
 
