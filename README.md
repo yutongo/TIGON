@@ -29,7 +29,7 @@ Packages required:
 `--n_hiddens` Number of hidden layers for the neural network learning velocity. 
 
 ### Outputs:
-'ckpt.pth': save model’s parameters and training errors.
+`ckpt.pth`: save model’s parameters and training errors.
 
 ### Examples:
 `python3 TIGON.py`
