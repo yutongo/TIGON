@@ -10,7 +10,11 @@ Packages required:
 6. random
 7. matplotlib
 8. functools
-9. numpy
+
+Generating plots to visualiza results:
+1. numpy
+2. mpl_toolkits
+3. seaborn
 
 
 # Input Files
