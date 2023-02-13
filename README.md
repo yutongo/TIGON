@@ -1,4 +1,5 @@
-# TIGON
+# TIGON 
+(**T**rajectory **I**nference with **G**rowth via **O**ptimal transport and **N**eural network)
 
 # Installment
 Packages required:
