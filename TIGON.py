@@ -1,12 +1,8 @@
 import os
-# import numpy as np
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-# import scipy.io
-# import random
-# from TorchDiffEqPack import odesolve
-# from torchdiffeq import odeint
 from utility import *
 
 
@@ -40,7 +36,6 @@ if __name__ == '__main__':
     options = {}
     options.update({'method': 'Dopri5'})
     options.update({'h': None})
-    options.update({'t0': 0})
     options.update({'rtol': 1e-3})
     options.update({'atol': 1e-5})
     options.update({'print_neval': False})
@@ -57,10 +52,10 @@ if __name__ == '__main__':
     Trans = []
     Sigma = []
     
-    if args.results_dir is not None:
-        if not os.path.exists(args.results_dir):
-            os.makedirs(args.results_dir)
-        ckpt_path = os.path.join(args.results_dir, 'ckpt.pth')
+    if args.save_dir is not None:
+        if not os.path.exists(args.save_dir):
+            os.makedirs(args.save_dir)
+        ckpt_path = os.path.join(args.save_dir, 'ckpt.pth')
         if os.path.exists(ckpt_path):
             checkpoint = torch.load(ckpt_path)
             func.load_state_dict(checkpoint['func_state_dict'])
@@ -68,11 +63,11 @@ if __name__ == '__main__':
             print('Loaded ckpt from {}'.format(ckpt_path))
 
     try:
-        sigma_now = 1 
+        sigma_now = 1
         for itr in range(1, args.niters + 1):
             optimizer.zero_grad()
             
-            loss, loss1, sigma_now, L2_value1, L2_value2 = train_model(mse,func,itr,args,data_train,train_time,integral_time,sigma_now,options,device)
+            loss, loss1, sigma_now, L2_value1, L2_value2 = train_model(mse,func,args,data_train,train_time,integral_time,sigma_now,options,device,itr)
 
             
             loss.backward()
@@ -89,7 +84,7 @@ if __name__ == '__main__':
             
             
             if itr % 500 == 0:
-                ckpt_path = os.path.join(args.results_dir, 'ckpt_itr{}.pth'.format(itr))
+                ckpt_path = os.path.join(args.save_dir, 'ckpt_itr{}.pth'.format(itr))
                 torch.save({'func_state_dict': func.state_dict()}, ckpt_path)
                 print('Iter {}, Stored ckpt at {}'.format(itr, ckpt_path))
                 
@@ -97,8 +92,8 @@ if __name__ == '__main__':
             
 
     except KeyboardInterrupt:
-        if args.results_dir is not None:
-            ckpt_path = os.path.join(args.results_dir, 'ckpt.pth')
+        if args.save_dir is not None:
+            ckpt_path = os.path.join(args.save_dir, 'ckpt.pth')
             torch.save({
                 'func_state_dict': func.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
@@ -107,7 +102,7 @@ if __name__ == '__main__':
     print('Training complete after {} iters.'.format(itr))
     
     
-    ckpt_path = os.path.join(args.results_dir, 'ckpt.pth')
+    ckpt_path = os.path.join(args.save_dir, 'ckpt.pth')
     torch.save({
         'func_state_dict': func.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
@@ -118,3 +113,9 @@ if __name__ == '__main__':
         'Sigma': Sigma
     }, ckpt_path)
     print('Stored ckpt at {}'.format(ckpt_path))
+
+
+    
+    
+    
+    

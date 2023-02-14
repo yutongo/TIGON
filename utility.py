@@ -15,6 +15,7 @@ from mpl_toolkits import mplot3d
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.patches import FancyArrowPatch
 from mpl_toolkits.mplot3d import proj3d
+import seaborn as sns
 
 def create_args():
     parser = argparse.ArgumentParser()
@@ -22,14 +23,14 @@ def create_args():
     parser.add_argument('--timepoints', help = "time points of data", type=list, default = [0, 0.1, 0.3, 0.9, 2.1])
     parser.add_argument('--niters',help = "Number of traning iterations", type=int, default=5000)
     parser.add_argument('--lr', help = "Learning rate", type=float, default=3e-3) 
-    parser.add_argument('--num_samples', help = "Number of sampling points i.e. batch size", type=int, default=100)
+    parser.add_argument('--num_samples', help = "Number of sampling points per epoch", type=int, default=100)
     parser.add_argument('--hidden_dim', help = "dimension of hidden layer", type=int, default=16)
     parser.add_argument('--n_hiddens', help = "number of hidden layers", type=int, default=4)
     parser.add_argument('--activation', type=str, default='Tanh')
     parser.add_argument('--gpu', type=int, default=0)
-    parser.add_argument('--input_path', type=str,help="Input Files Directory. Default 'Input/'",default='Input/')
-    parser.add_argument('--results_dir', type=str,help="Output Files Directory", default="Results/")
-    parser.add_argument('--seed', help="random seed",type=int, default= 15)
+    parser.add_argument('--input_dir', type=str,help="Input Files Directory. Default 'Input/'",default='Input/')
+    parser.add_argument('--save_dir', type=str,help="Output Files Directory", default="Output/")
+    parser.add_argument('--seed', help="random seed",type=int, default= 1)
     args = parser.parse_args()
     return args
 
@@ -209,7 +210,7 @@ def Sampling(num_samples,time_all,time_pt,data_train,sigma,device):
 
 
 def loaddata(args,device):
-    data=np.load(os.path.join(args.input_path,(args.dataset+'.npy')),allow_pickle=True)
+    data=np.load(os.path.join(args.input_dir,(args.dataset+'.npy')),allow_pickle=True)
     data_train=[]
     for i in range(data.shape[1]):
         data_train.append(torch.from_numpy(data[0,i]).type(torch.float32).to(device))
@@ -223,26 +224,39 @@ def ggrowth(t,y,func,device):
     return (y_0,y_00,gg)
     
     
-def trans_loss(t,y,func,device):
-    v = func.forward(t, y)[0]
-    g = func.forward(t, y)[1]
+def trans_loss(t,y,func,device,odeint_setp):
+    outputs= func.forward(t, y)
+    v = outputs[0]
+    g = outputs[1]
     y_0 = torch.zeros(g.shape).type(torch.float32).to(device)
     y_00 = torch.zeros(v.shape).type(torch.float32).to(device)
     g_growth = partial(ggrowth,func=func,device=device)
     if torch.is_nonzero(t):
-        _,_, exp_g = odeint(g_growth, (y_00,y_0,y_0), torch.tensor([0,t]).type(torch.float32).to(device),atol=1e-5,rtol=1e-5,method='midpoint',options = {'step_size': 0.1})
+        _,_, exp_g = odeint(g_growth, (y_00,y_0,y_0), torch.tensor([0,t]).type(torch.float32).to(device),atol=1e-5,rtol=1e-5,method='midpoint',options = {'step_size': odeint_setp})
         f_int = (torch.norm(v,dim=1)**2+torch.norm(g,dim=1)**2).unsqueeze(1)*torch.exp(exp_g[-1])
         return (y_00,y_0,f_int)
     else:
         return (y_00,y_0,y_0)
 
+def gcd_list(numbers):
+    def _gcd(a, b):
+        while b:
+            a, b = b, a % b
+        return a
 
-def train_model(mse,func,itr,args,data_train,train_time,integral_time,sigma_now,options,device):
+    gcd_value = numbers[0]
+    for i in range(1, len(numbers)):
+        gcd_value = _gcd(gcd_value, numbers[i])
+
+    return gcd_value
+
+
+def train_model(mse,func,args,data_train,train_time,integral_time,sigma_now,options,device,itr):
 
     loss = 0
     L2_value1 = torch.zeros(1,len(data_train)-1).type(torch.float32).to(device)
     L2_value2 = torch.zeros(1,len(data_train)-1).type(torch.float32).to(device)
-    
+    odeint_setp = gcd_list([num * 100 for num in integral_time])/100
     for i in range(len(train_time)-1): 
         x = Sampling(args.num_samples, train_time,i+1,data_train,0.02,device)
         x.requires_grad=True
@@ -280,11 +294,11 @@ def train_model(mse,func,itr,args,data_train,train_time,integral_time,sigma_now,
         
         
     # compute transport cost efficiency
-    transport_cost = partial(trans_loss,func=func,device=device)
+    transport_cost = partial(trans_loss,func=func,device=device,odeint_setp=odeint_setp)
     x0 = Sampling(args.num_samples,train_time,0,data_train,0.02,device) 
     logp_diff_t00 = torch.zeros(x0.shape[0], 1).type(torch.float32).to(device)
     g_t00 = logp_diff_t00
-    _,_,loss1 = odeint(transport_cost,y0=(x0, g_t00, logp_diff_t00),t = torch.tensor([0, integral_time[-1]]).type(torch.float32).to(device),atol=1e-5,rtol=1e-5,method='midpoint',options = {'step_size': 0.1})
+    _,_,loss1 = odeint(transport_cost,y0=(x0, g_t00, logp_diff_t00),t = torch.tensor([0, integral_time[-1]]).type(torch.float32).to(device),atol=1e-5,rtol=1e-5,method='midpoint',options = {'step_size': odeint_setp})
     loss = loss + integral_time[-1]*loss1[-1].mean(0)
 
 
@@ -295,10 +309,10 @@ def train_model(mse,func,itr,args,data_train,train_time,integral_time,sigma_now,
     return loss, loss1, sigma_now, L2_value1, L2_value2
             
 
-
-def plot_3d(func,data_train,train_time,integral_time,integral_time2,sample_time,args,device):
+# plot 3d of inferred trajectory of 20 cells
+def plot_3d(func,data_train,train_time,integral_time,args,device):
     viz_samples = 20
-    sigma_a = 0.02
+    sigma_a = 0.001
 
     t_list = []#list(reversed(integral_time))#integral_time #np.linspace(5, 0, viz_timesteps)
     #options.update({'t_eval':t_list})
@@ -308,7 +322,12 @@ def plot_3d(func,data_train,train_time,integral_time,integral_time2,sample_time,
     v = []
     g = []
     t_list2 = [] 
+    odeint_setp = gcd_list([num * 100 for num in integral_time])/100
+    integral_time2 = np.arange(integral_time[0], integral_time[-1]+odeint_setp, odeint_setp)
+    integral_time2 = np.round_(integral_time2, decimals = 2)
     plot_time = list(reversed(integral_time2))
+    sample_time = np.where(np.isin(np.array(plot_time),integral_time))[0]
+    sample_time = list(reversed(sample_time))
 
     with torch.no_grad():
         for i in range(len(integral_time)):
@@ -349,7 +368,7 @@ def plot_3d(func,data_train,train_time,integral_time,integral_time2,sample_time,
             
             z_t_samples.append(z_t1[i+1].cpu().detach().numpy())
             g.append(g_t.cpu().detach().numpy())
-            v.append(v_t.cpu().detach().numpy())#/20)
+            v.append(v_t.cpu().detach().numpy())
             t_list.append(plot_time[i+1])
 
         aa=5#3
@@ -359,8 +378,12 @@ def plot_3d(func,data_train,train_time,integral_time,integral_time2,sample_time,
         trans2 = 0.4
         widths = 0.2 #arrow width
         ratio1 = 0.4
-
         fig = plt.figure(figsize=(4*2,3*2), dpi=200)
+        plt.tight_layout()
+        plt.margins(0, 0)
+        v_scale = 5
+
+
         plt.tight_layout()
         #plt.axis('off')
         plt.margins(0, 0)
@@ -382,10 +405,8 @@ def plot_3d(func,data_train,train_time,integral_time,integral_time2,sample_time,
         ax1.w_zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
         ax1.invert_xaxis()
         ax1.get_proj = lambda: np.dot(Axes3D.get_proj(ax1), np.diag([1, 1, 0.7, 1]))
-
-        #trans = 0.8#0.2
-        #dot_size = 10#5
         line_width = 0.3
+
         
         
         color_wanted = [np.array([250,187,110])/255,
@@ -401,22 +422,75 @@ def plot_3d(func,data_train,train_time,integral_time,integral_time2,sample_time,
                 ax1.plot([z_t_samples[i][j,0],z_t_samples[i+1][j,0]],
                             [z_t_samples[i][j,1],z_t_samples[i+1][j,1]],
                             [z_t_samples[i][j,2],z_t_samples[i+1][j,2]],
-                            linewidth=0.8,color =np.array([132,132,132])/255,zorder=5.2)
+                            linewidth=0.5,color ='grey',zorder=2)
 
                         
         # add inferrred trajecotry
         for i in range(len(sample_time)):
-            ax1.scatter(z_t_samples[sample_time[i]][:,0],z_t_samples[sample_time[i]][:,1],z_t_samples[sample_time[i]][:,2],s=aa*5,linewidth=0, color=color_wanted[i],zorder=5.3)
+            ax1.scatter(z_t_samples[sample_time[i]][:,0],z_t_samples[sample_time[i]][:,1],z_t_samples[sample_time[i]][:,2],s=aa*10,linewidth=0, color=color_wanted[i],zorder=3)
+            ax1.quiver(z_t_samples[sample_time[i]][:,0],z_t_samples[sample_time[i]][:,1],z_t_samples[sample_time[i]][:,2],
+                       v[sample_time[i]][:,0]/v_scale,v[sample_time[i]][:,1]/v_scale,v[sample_time[i]][:,2]/v_scale, color='k',alpha=1,linewidths=widths*2,arrow_length_ratio=0.3,zorder=4)
 
                 
         for i in range(len(integral_time)):
-            ax1.scatter(z_t_data[i][:,0],z_t_data[i][:,1],z_t_data[i][:,2],s=aa,linewidth=line_width,alpha = 0.7, facecolors='none', edgecolors=color_wanted[i],zorder=5.1)
+            ax1.scatter(z_t_data[i][:,0],z_t_data[i][:,1],z_t_data[i][:,2],s=aa,linewidth=line_width,alpha = 0.7, facecolors='none', edgecolors=color_wanted[i],zorder=1)
 
-
-        # link the traj
-
-        plt.savefig(os.path.join(args.results_dir, f"traj_3d.pdf"),format="pdf",pad_inches=0.1, bbox_inches='tight')
+        plt.savefig(os.path.join(args.save_dir, f"traj_3d.pdf"),format="pdf",pad_inches=0.1, bbox_inches='tight')
         plt.close()    
             
             
-            
+def Jacobian(f, z):
+    """Calculates Jacobian df/dz.
+    """
+    jac = []
+    for i in range(z.shape[1]):
+        df_dz = torch.autograd.grad(f[:, i], z, torch.ones_like(f[:, i]),retain_graph=True, create_graph=True)[0].view(z.shape[0], -1)
+        jac.append(torch.unsqueeze(df_dz, 1))
+    jac = torch.cat(jac, 1)
+    return jac
+
+# plot avergae jac of v of cells (z_t) at time (time_pt)
+def plot_jac_v(func,z_t,time_pt,title,gene_list,args,device):
+    g_xt0 = torch.zeros(1, 1).type(torch.float32).to(device)
+    logp_diff_xt0 = g_xt0
+    # compute the mean of jacobian of v within cells z_t at time (time_pt)
+    dim = z_t.shape[1]
+    jac = np.zeros((dim,dim))
+    for i in range(z_t.shape[0]):
+        x_t = z_t[i,:].reshape([1,dim])
+        v_xt = func(torch.tensor(time_pt).type(torch.float32).to(device),(x_t,g_xt0, logp_diff_xt0))[0]
+        jac = jac+Jacobian(v_xt, x_t).reshape(dim,dim).detach().cpu().numpy()
+    jac = jac/z_t.shape[0]
+    
+    fig = plt.figure(figsize=(5, 4), dpi=200)
+    plt.tight_layout()
+    #plt.axis('off')
+    plt.margins(0, 0)
+    ax2 = fig.add_subplot(1, 1, 1)
+    ax2.set_title('Jacobian of velocity')
+    ax2=sns.heatmap(jac,cmap="coolwarm",xticklabels=gene_list,yticklabels=gene_list)
+    plt.savefig(os.path.join(args.save_dir, title),format="pdf",
+                pad_inches=0.2, bbox_inches='tight')
+                
+
+# plot avergae gradients of g of cells (z_t) at time (time_pt)
+def plot_grad_g(func,z_t,time_pt,title,gene_list,args,device):
+    g_xt0 = torch.zeros(1, 1).type(torch.float32).to(device)
+    logp_diff_xt0 = g_xt0
+    dim = z_t.shape[1]
+    gg = np.zeros((dim,dim))
+    for i in range(z_t.shape[0]):
+        x_t = z_t[i,:].reshape([1,dim])
+        g_xt = func(torch.tensor(time_pt).type(torch.float32).to(device),(x_t,g_xt0, logp_diff_xt0))[1]
+        gg = gg+torch.autograd.grad(g_xt, x_t, torch.ones_like(g_xt),retain_graph=True, create_graph=True)[0].view(x_t.shape[0], -1).reshape(dim,1).detach().cpu().numpy()
+    gg = gg/z_t.shape[0]
+    
+    fig = plt.figure(figsize=(1, 4), dpi=200)
+    plt.tight_layout()
+    #plt.axis('off')
+    plt.margins(0, 0)
+    ax2 = fig.add_subplot(1, 1, 1)
+    ax2.set_title('Gradient of growth')
+    ax2=sns.heatmap(gg,cmap="coolwarm",xticklabels=[],yticklabels=gene_list)
+    plt.savefig(os.path.join(args.save_dir, title),format="pdf",
+                pad_inches=0.2, bbox_inches='tight')
