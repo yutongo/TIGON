@@ -12,7 +12,7 @@ Packages required:
 7. matplotlib
 8. functools
 
-Generating plots to visualiza results:
+Generating plots to visualize results:
 1. numpy
 2. mpl_toolkits
 3. seaborn
