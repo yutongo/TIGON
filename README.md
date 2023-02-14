@@ -3,7 +3,7 @@
 
 # Installment
 Packages required:
-1. Python=3.6
+1. Python=3.6.8
 2. torch=1.9.0
 3. scipy=1.5.2
 4. [TorchDiffEqPack](https://jzkay12.github.io/TorchDiffEqPack/TorchDiffEqPack.odesolver.html)=0.1.0
