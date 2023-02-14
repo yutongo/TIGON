@@ -3,19 +3,17 @@
 
 # Installment
 Packages required:
-1. Python3.6 or later
-2. torch
-3. scipy
-4. [TorchDiffEqPack](https://jzkay12.github.io/TorchDiffEqPack/TorchDiffEqPack.odesolver.html)
-5. [torchdiffeq](https://github.com/rtqichen/torchdiffeq)
-6. random
-7. matplotlib
-8. functools
+1. Python=3.6
+2. torch=1.9.0
+3. scipy=1.5.2
+4. [TorchDiffEqPack](https://jzkay12.github.io/TorchDiffEqPack/TorchDiffEqPack.odesolver.html)=0.1.0
+5. [torchdiffeq](https://github.com/rtqichen/torchdiffeq)=0.2.2
+
 
 Generating plots to visualize results:
-1. numpy
-2. mpl_toolkits
-3. seaborn
+1. numpy=1.19.5
+2. seaborn=0.11.2
+3. matplotlib=3.1.2
 
 
 # Input Files
