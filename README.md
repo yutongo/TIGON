@@ -40,6 +40,8 @@ Generating plots to visualiza results:
 ### Examples:
 `python3 TIGON.py`
 
+### Plot results:
+`python3 plot_result.py`
 
 # Sources
 ## Lineage tracing dataset
