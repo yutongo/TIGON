@@ -37,9 +37,13 @@ Generating plots to visualize results:
 
 ### Examples:
 `python3 TIGON.py`
+Or
+Check `Notebooks/Training.ipynb `
 
 ### Plot results:
 `python3 plot_result.py`
+Or
+Check `Notebooks/Visualization.ipynb `
 
 # Sources
 ## Lineage tracing dataset
