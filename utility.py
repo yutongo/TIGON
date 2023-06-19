@@ -10,30 +10,34 @@ import scipy.io as sio
 import random
 from torchdiffeq import odeint
 from functools import partial
-import argparse
+import getpass
 from mpl_toolkits import mplot3d
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.patches import FancyArrowPatch
 from mpl_toolkits.mplot3d import proj3d
 import seaborn as sns
+import warnings
+warnings.filterwarnings("ignore")
+
+class Args:
+    pass
 
 def create_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', help = "Name of the data set. Options: EMT; Lineage; Bifurcation; Simulation", default = 'EMT')
-    parser.add_argument('--timepoints', help = "time points of data", type=list, default = [0, 0.1, 0.3, 0.9, 2.1])
-    parser.add_argument('--niters',help = "Number of traning iterations", type=int, default=5000)
-    parser.add_argument('--lr', help = "Learning rate", type=float, default=3e-3) 
-    parser.add_argument('--num_samples', help = "Number of sampling points per epoch", type=int, default=100)
-    parser.add_argument('--hidden_dim', help = "dimension of hidden layer", type=int, default=16)
-    parser.add_argument('--n_hiddens', help = "number of hidden layers", type=int, default=4)
-    parser.add_argument('--activation', type=str, default='Tanh')
-    parser.add_argument('--gpu', type=int, default=0)
-    parser.add_argument('--input_dir', type=str,help="Input Files Directory. Default 'Input/'",default='Input/')
-    parser.add_argument('--save_dir', type=str,help="Output Files Directory", default="Output/")
-    parser.add_argument('--seed', help="random seed",type=int, default= 1)
-    args = parser.parse_args()
+    args = Args()
+    args.dataset = input("Name of the data set. Options: EMT; Lineage; Bifurcation; Simulation (default: EMT): ") or 'EMT'
+    timepoints = input("Time points of data (default: 0, 0.1, 0.3, 0.9, 2.1): ")
+    args.timepoints = [float(tp.strip()) for tp in timepoints.split(",")] if timepoints else [0, 0.1, 0.3, 0.9, 2.1]
+    args.niters = int(input("Number of training iterations (default: 5000): ") or 5000)
+    args.lr = float(input("Learning rate (default: 3e-3): ") or 3e-3)
+    args.num_samples = int(input("Number of sampling points per epoch (default: 100): ") or 100)
+    args.hidden_dim = int(input("Dimension of the hidden layer (default: 16): ") or 16)
+    args.n_hiddens = int(input("Number of hidden layers (default: 4): ") or 4)
+    args.activation = input("Activation function (default: Tanh): ") or 'Tanh'
+    args.gpu = int(input("GPU device index (default: 0): ") or 0)
+    args.input_dir = input("Input Files Directory (default: Input/): ") or 'Input/'
+    args.save_dir = input("Output Files Directory (default: Output/): ") or 'Output/'
+    args.seed = int(input("Random seed (default: 1): ") or 1)
     return args
-
 
 
 class UOT(nn.Module):
@@ -252,6 +256,7 @@ def gcd_list(numbers):
 
 
 def train_model(mse,func,args,data_train,train_time,integral_time,sigma_now,options,device,itr):
+    warnings.filterwarnings("ignore")
 
     loss = 0
     L2_value1 = torch.zeros(1,len(data_train)-1).type(torch.float32).to(device)
@@ -385,7 +390,7 @@ def plot_3d(func,data_train,train_time,integral_time,args,device):
 
 
         plt.tight_layout()
-        #plt.axis('off')
+        plt.axis('off')
         plt.margins(0, 0)
         #fig.suptitle(f'{t:.1f}day')
         ax1 = plt.axes(projection ='3d')
@@ -435,8 +440,8 @@ def plot_3d(func,data_train,train_time,integral_time,args,device):
         for i in range(len(integral_time)):
             ax1.scatter(z_t_data[i][:,0],z_t_data[i][:,1],z_t_data[i][:,2],s=aa,linewidth=line_width,alpha = 0.7, facecolors='none', edgecolors=color_wanted[i],zorder=1)
 
-        plt.savefig(os.path.join(args.save_dir, f"traj_3d.pdf"),format="pdf",pad_inches=0.1, bbox_inches='tight')
-        plt.close()    
+        #plt.savefig(os.path.join(args.save_dir, f"traj_3d.pdf"),format="pdf",pad_inches=0.1, bbox_inches='tight')
+        plt.show()
             
             
 def Jacobian(f, z):
@@ -463,14 +468,18 @@ def plot_jac_v(func,z_t,time_pt,title,gene_list,args,device):
     jac = jac/z_t.shape[0]
     
     fig = plt.figure(figsize=(5, 4), dpi=200)
+    ax = fig.add_subplot(111)
     plt.tight_layout()
-    #plt.axis('off')
+    plt.axis('off')
     plt.margins(0, 0)
-    ax2 = fig.add_subplot(1, 1, 1)
-    ax2.set_title('Jacobian of velocity')
-    ax2=sns.heatmap(jac,cmap="coolwarm",xticklabels=gene_list,yticklabels=gene_list)
-    plt.savefig(os.path.join(args.save_dir, title),format="pdf",
-                pad_inches=0.2, bbox_inches='tight')
+    ax.set_title('Jacobian of velocity')
+    sns.heatmap(jac,cmap="coolwarm",xticklabels=gene_list,yticklabels=gene_list)
+    ax.set_xticks([])  # Remove x-axis tick marks
+    ax.set_yticks([])  # Remove y-axis tick marks
+    ax.axis('off')
+    #plt.savefig(os.path.join(args.save_dir, title),format="pdf",
+    #            pad_inches=0.2, bbox_inches='tight')
+    plt.show()
                 
 
 # plot avergae gradients of g of cells (z_t) at time (time_pt)
@@ -485,12 +494,16 @@ def plot_grad_g(func,z_t,time_pt,title,gene_list,args,device):
         gg = gg+torch.autograd.grad(g_xt, x_t, torch.ones_like(g_xt),retain_graph=True, create_graph=True)[0].view(x_t.shape[0], -1).reshape(dim,1).detach().cpu().numpy()
     gg = gg/z_t.shape[0]
     
-    fig = plt.figure(figsize=(1, 4), dpi=200)
+    fig= plt.figure(figsize=(1, 4), dpi=200)
+    ax = fig.add_subplot(111)
     plt.tight_layout()
-    #plt.axis('off')
+    plt.axis('off')
     plt.margins(0, 0)
-    ax2 = fig.add_subplot(1, 1, 1)
-    ax2.set_title('Gradient of growth')
-    ax2=sns.heatmap(gg,cmap="coolwarm",xticklabels=[],yticklabels=gene_list)
-    plt.savefig(os.path.join(args.save_dir, title),format="pdf",
-                pad_inches=0.2, bbox_inches='tight')
+    ax.set_title('Gradient of growth')
+    sns.heatmap(gg,cmap="coolwarm",xticklabels=[],yticklabels=gene_list)
+    ax.set_xticks([])  # Remove x-axis tick marks
+    ax.set_yticks([])  # Remove y-axis tick marks
+    ax.axis('off') 
+    #plt.savefig(os.path.join(args.save_dir, title),format="pdf",
+    #            pad_inches=0.2, bbox_inches='tight')
+    plt.show()
