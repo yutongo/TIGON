@@ -1,5 +1,10 @@
 # TIGON 
-(**T**rajectory **I**nference with **G**rowth via **O**ptimal transport and **N**eural network)
+**T**rajectory **I**nference with **G**rowth via **O**ptimal transport and **N**eural network
+![Doc/overview.jpg](https://github.com/yutongo/TIGON/blob/main/Doc/overview.jpg)
+
+TIGON is a dynamic unbalanced optimal transport (OT) model that reconstructs dynamic trajectories and population growth simultaneously as well as the underlying
+gene regulatory network (GRN) from time-series scRNA-seq snapshots.
+
 
 # Requirements
 The training framework is implemented in PyTorch and Neural ODEs. Given a stable internet connection, it will take several minutes to install these packages:
