@@ -1,8 +1,8 @@
 # TIGON 
 (**T**rajectory **I**nference with **G**rowth via **O**ptimal transport and **N**eural network)
 
-# Installment
-Packages required:
+# Requirements
+The training framework is implemented in PyTorch and Neural ODEs. Given a stable internet connection, it will take several minutes to install these packages:
 1. Python=3.6.8
 2. torch=1.9.0
 3. scipy=1.5.2
@@ -10,7 +10,7 @@ Packages required:
 5. [torchdiffeq](https://github.com/rtqichen/torchdiffeq)=0.2.2
 
 
-Generating plots to visualize results:
+For generating plots to visualize results, the required packages are listed: 
 1. numpy=1.19.5
 2. seaborn=0.11.2
 3. matplotlib=3.1.2
