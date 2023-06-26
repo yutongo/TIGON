@@ -41,14 +41,17 @@ For generating plots to visualize results, the required packages are listed:
 `ckpt.pth`: save model’s parameters and training errors.
 
 ### Examples:
-`python3 TIGON.py`
-Or
-Check `Notebooks/Training.ipynb `
+Training process: `python3 TIGON.py`
 
-### Plot results:
-`python3 plot_result.py`
-Or
-Check `Notebooks/Visualization.ipynb `
+Visualization of results: `python3 plot_result.py`
+
+### Tutorials:
+A Jupyter Notebook of the step-by-step tutorial is accessible from :
+
+Training process: `Notebooks/Training.ipynb`
+
+Visualization of results: `Notebooks/Visualization.ipynb`
+
 
 # Sources
 ## Lineage tracing dataset
