@@ -8,17 +8,17 @@ gene regulatory network (GRN) from time-series scRNA-seq snapshots.
 
 # Requirements
 The training framework is implemented in PyTorch and Neural ODEs. Given a stable internet connection, it will take several minutes to install these packages:
-1. Python=3.6.8
-2. torch=1.9.0
-3. scipy=1.5.2
-4. [TorchDiffEqPack](https://jzkay12.github.io/TorchDiffEqPack/TorchDiffEqPack.odesolver.html)=0.1.0
-5. [torchdiffeq](https://github.com/rtqichen/torchdiffeq)=0.2.2
+* pytorch 1.13.1
+* scipy 1.10.1
+* [TorchDiffEqPack](https://jzkay12.github.io/TorchDiffEqPack/TorchDiffEqPack.odesolver.html) 1.0.1
+* [torchdiffeq](https://github.com/rtqichen/torchdiffeq) 0.2.3
+* Recommended: An Nvidia GPU with CUDA support for GPU acceleration
 
 
 For generating plots to visualize results, the required packages are listed: 
-1. numpy=1.19.5
-2. seaborn=0.11.2
-3. matplotlib=3.1.2
+* numpy 1.23.5
+* seaborn 0.12.2
+* matplotlib 3.5.3
 
 
 # Input Files
