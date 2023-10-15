@@ -2,6 +2,8 @@
 **T**rajectory **I**nference with **G**rowth via **O**ptimal transport and **N**eural network
 ![Doc/overview.jpg](https://github.com/yutongo/TIGON/blob/main/Doc/overview.jpg)
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10005456.svg)](https://doi.org/10.5281/zenodo.10005456)
+
 TIGON is a dynamic unbalanced optimal transport (OT) model that reconstructs dynamic trajectories and population growth simultaneously as well as the underlying
 gene regulatory network (GRN) from time-series scRNA-seq snapshots.
 
