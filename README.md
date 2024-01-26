@@ -63,3 +63,4 @@ TGFB1 induced EMT from A549 cancer cell line dataset (raw data of `EMT.npy`) can
 ## Bifurcation dataset
 Single-cell qPCR dataset of iPSCs toward cardiomyocytes dataset (raw data of `Bifurcation.npy`) can be obtained from: [Bargaje, Rhishikesh, et al. "Cell population structure prior to bifurcation predicts efficiency of directed differentiation in human induced pluripotent cells." Proceedings of the National Academy of Sciences 114.9 (2017): 2271-2276.](https://www.pnas.org/doi/abs/10.1073/pnas.1621412114)
 # Reference
+Sha, Y., Qiu, Y., Zhou, P., & Nie, Q. (2023). Reconstructing growth and dynamic trajectories from single-cell transcriptomics data. _Nature Machine Intelligence._ https://www.nature.com/articles/s42256-023-00763-w#
